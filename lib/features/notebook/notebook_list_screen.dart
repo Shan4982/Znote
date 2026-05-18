@@ -116,11 +116,9 @@ class _NotebookListScreenState extends ConsumerState<NotebookListScreen> {
       ),
     );
     if (title == null) return;
-    final db = ref.read(databaseProvider).valueOrNull;
-    if (db == null) return;
+    final db = await ref.read(databaseProvider.future);
+    final fs = await ref.read(fileStorageProvider.future);
     final id = FileStorage.generateId();
-    final fs = ref.read(fileStorageProvider).valueOrNull;
-    if (fs == null) return;
     await fs.ensureNotebookDirs(id);
     await db.createNotebook(NotebooksCompanion(
       id: Value(id),

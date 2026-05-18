@@ -117,9 +117,7 @@ class _NotebookDetailScreenState extends ConsumerState<NotebookDetailScreen> {
   }
 
   Future<void> _createPage() async {
-    final db = ref.read(databaseProvider).valueOrNull;
-    if (db == null) return;
-
+    final db = await ref.read(databaseProvider.future);
     final pageCount = (await db.notebookPages(widget.notebookId)).length;
     final id = FileStorage.generateId();
     await db.createPage(PagesCompanion(
