@@ -7,15 +7,41 @@ class NoteApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'NoteApp',
+      title: 'ZNote',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6750A4),
+          seedColor: const Color(0xFF1A73E8),
           brightness: Brightness.light,
         ),
+        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
         useMaterial3: true,
-        cardTheme: const CardThemeData(elevation: 1),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF202124),
+          elevation: 0.5,
+          centerTitle: false,
+          titleTextStyle: TextStyle(
+            color: Color(0xFF202124),
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 1,
+          shadowColor: Colors.black.withValues(alpha: 0.08),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          color: Colors.white,
+          clipBehavior: Clip.antiAlias,
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Color(0xFF1A73E8),
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shape: CircleBorder(),
+        ),
       ),
       home: const NotebookListScreen(),
     );

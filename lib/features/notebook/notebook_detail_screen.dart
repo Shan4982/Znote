@@ -16,6 +16,17 @@ class NotebookDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _NotebookDetailScreenState extends ConsumerState<NotebookDetailScreen> {
+  late String _currentNotebookId;
+  Color _accentColor = const Color(0xFF1A73E8);
+
+  String _formatDate(DateTime dt) => '${dt.year}/${dt.month}/${dt.day}';
+
+  @override
+  void initState() {
+    super.initState();
+    _currentNotebookId = widget.notebookId;
+  }
+
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(databaseProvider);
@@ -29,7 +40,11 @@ class _NotebookDetailScreenState extends ConsumerState<NotebookDetailScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.file_upload_outlined),
+            icon: const Icon(Icons.search, size: 22),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.file_upload_outlined, size: 22),
             tooltip: '导入文档',
             onPressed: () => _importDocument(),
           ),
@@ -42,7 +57,7 @@ class _NotebookDetailScreenState extends ConsumerState<NotebookDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _createPage(),
-        child: const Icon(Icons.note_add),
+        child: const Icon(Icons.add, size: 28),
       ),
     );
   }
@@ -52,6 +67,13 @@ class _NotebookDetailScreenState extends ConsumerState<NotebookDetailScreen> {
       stream: db.watchAllNotebooks(),
       builder: (context, snapshot) {
         final notebook = snapshot.data?.where((n) => n.id == widget.notebookId).firstOrNull;
+        if (notebook != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() => _accentColor = Color(notebook.coverColor));
+            }
+          });
+        }
         return Text(notebook?.title ?? '笔记本');
       },
     );
@@ -66,15 +88,27 @@ class _NotebookDetailScreenState extends ConsumerState<NotebookDetailScreen> {
         }
         final pages = snapshot.data!;
         if (pages.isEmpty) {
-          return const Center(child: Text('还没有页面，点击 + 创建'));
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.note_add_outlined, size: 64, color: Colors.grey.shade300),
+                const SizedBox(height: 16),
+                Text('还没有页面', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+                const SizedBox(height: 8),
+                Text('点击右下角 + 创建第一页',
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+              ],
+            ),
+          );
         }
         return GridView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
+            crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.75,
+            childAspectRatio: 0.85,
           ),
           itemCount: pages.length,
           itemBuilder: (context, index) => _buildPageCard(pages[index]),
@@ -85,7 +119,6 @@ class _NotebookDetailScreenState extends ConsumerState<NotebookDetailScreen> {
 
   Widget _buildPageCard(NotePage page) {
     return Card(
-      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -95,19 +128,49 @@ class _NotebookDetailScreenState extends ConsumerState<NotebookDetailScreen> {
             ),
           );
         },
+        onLongPress: () => _showDeletePageDialog(page),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 3, child: Container(color: Color(page.backgroundColor))),
+            // 页面对应笔记本色的顶部条
+            Container(height: 6, color: _accentColor),
+            // 页面内容区 — 显示纸张样式
             Expanded(
-              flex: 1,
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Text(
-                  page.title,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Color(page.backgroundColor),
+                  border: Border.all(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(4),
                 ),
+                child: CustomPaint(
+                  painter: _PaperStylePainter(paperType: page.paperType),
+                  size: Size.infinite,
+                ),
+              ),
+            ),
+            // 底部信息
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    page.title.isEmpty ? '未命名页面' : page.title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF202124),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatDate(page.updatedAt),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
+                ],
               ),
             ),
           ],
@@ -133,10 +196,68 @@ class _NotebookDetailScreenState extends ConsumerState<NotebookDetailScreen> {
   }
 
   Future<void> _importDocument() async {
-    // Document import via file picker — stub that shows what's needed.
-    // Requires file_picker package for Flutter; here we show the flow.
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('请从系统文件选择器选择 PDF 或 Word 文档')),
     );
   }
+
+  Future<void> _showDeletePageDialog(NotePage page) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('删除页面'),
+        content: Text('确定要删除此页面吗？此操作不可撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('取消', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    final db = ref.read(databaseProvider).valueOrNull;
+    if (db == null) return;
+    await db.deletePage(page.id);
+  }
+}
+
+// 纸张背景绘制（空白、横线、网格）
+class _PaperStylePainter extends CustomPainter {
+  final String paperType;
+
+  _PaperStylePainter({required this.paperType});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (paperType == 'blank') return;
+
+    final paint = Paint()
+      ..color = const Color(0xFFE0E0E0)
+      ..strokeWidth = 0.5;
+
+    if (paperType == 'ruled') {
+      const spacing = 12.0;
+      for (double y = spacing; y < size.height; y += spacing) {
+        canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+      }
+    } else if (paperType == 'grid') {
+      const spacing = 16.0;
+      for (double x = spacing; x < size.width; x += spacing) {
+        canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+      }
+      for (double y = spacing; y < size.height; y += spacing) {
+        canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
