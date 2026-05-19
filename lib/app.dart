@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/notebook/notebook_list_screen.dart';
+import 'features/home/home_screen.dart';
 
 class NoteApp extends StatelessWidget {
   const NoteApp({super.key});
@@ -9,6 +9,7 @@ class NoteApp extends StatelessWidget {
     return MaterialApp(
       title: 'ZNote',
       debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.system,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1A73E8),
@@ -43,7 +44,41 @@ class NoteApp extends StatelessWidget {
           shape: CircleBorder(),
         ),
       ),
-      home: const NotebookListScreen(),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF1A73E8),
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E1E),
+          foregroundColor: Colors.white,
+          elevation: 0.5,
+          centerTitle: false,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 2,
+          shadowColor: Colors.black.withValues(alpha: 0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          color: const Color(0xFF2D2D2D),
+          clipBehavior: Clip.antiAlias,
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Color(0xFF1A73E8),
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shape: CircleBorder(),
+        ),
+      ),
+      home: const HomeScreen(),
     );
   }
 }
