@@ -9,6 +9,8 @@ class Notebooks extends Table {
   DateTimeColumn get updatedAt => dateTime()();
   IntColumn get sortOrder => integer()();
 
+  TextColumn get parentId => text().nullable().references(Notebooks, #id, onDelete: KeyAction.cascade)();
+
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -89,7 +89,7 @@ class _NotebookTreePanelState extends ConsumerState<NotebookTreePanel> {
 
   Widget _buildTree(AppDatabase db, bool isDark) {
     return StreamBuilder<List<Notebook>>(
-      stream: db.watchAllNotebooks(),
+      stream: db.watchRootNotebooks(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -152,10 +152,42 @@ class _NotebookTreePanelState extends ConsumerState<NotebookTreePanel> {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           child: isExpanded
-              ? _buildPageList(db, nb.id, accentColor, isDark)
+              ? _buildExpandedContent(db, nb.id, accentColor, isDark)
               : const SizedBox.shrink(),
         ),
       ],
+    );
+  }
+
+  Widget _buildExpandedContent(AppDatabase db, String notebookId, Color accentColor, bool isDark) {
+    return StreamBuilder<List<Notebook>>(
+      stream: db.watchChildNotebooks(notebookId),
+      builder: (context, childSnapshot) {
+        final childNotebooks = childSnapshot.data ?? [];
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ...childNotebooks.map((child) => Padding(
+              padding: const EdgeInsets.only(left: 24),
+              child: _buildNotebookNode(child, db, isDark),
+            )),
+            _buildPageList(db, notebookId, accentColor, isDark),
+            Padding(
+              padding: const EdgeInsets.only(left: 48, bottom: 4),
+              child: InkWell(
+                onTap: () => _createSubNotebook(notebookId),
+                child: Row(
+                  children: [
+                    Icon(Icons.create_new_folder_outlined, size: 16, color: accentColor.withValues(alpha: 0.7)),
+                    const SizedBox(width: 8),
+                    Text('新建子文件夹', style: TextStyle(fontSize: 12, color: accentColor.withValues(alpha: 0.7))),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -263,9 +295,51 @@ class _NotebookTreePanelState extends ConsumerState<NotebookTreePanel> {
       coverColor: Value(Colors.primaries[id.hashCode % Colors.primaries.length].toARGB32()),
       createdAt: Value(DateTime.now()),
       updatedAt: Value(DateTime.now()),
-      sortOrder: Value(0),
+      sortOrder: const Value(0),
     ));
     setState(() => _expandedNotebooks.add(id));
+  }
+
+  Future<void> _createSubNotebook(String parentId) async {
+    final controller = TextEditingController();
+    final title = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('新建子文件夹', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: '输入文件夹名称',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.isEmpty ? '未命名文件夹' : controller.text),
+            child: const Text('创建'),
+          ),
+        ],
+      ),
+    );
+    if (title == null) return;
+    final db = await ref.read(databaseProvider.future);
+    final fs = await ref.read(fileStorageProvider.future);
+    final id = FileStorage.generateId();
+    await fs.ensureNotebookDirs(id);
+    await db.createNotebook(NotebooksCompanion(
+      id: Value(id),
+      title: Value(title),
+      parentId: Value(parentId),
+      coverColor: Value(Colors.primaries[id.hashCode % Colors.primaries.length].toARGB32()),
+      createdAt: Value(DateTime.now()),
+      updatedAt: Value(DateTime.now()),
+      sortOrder: const Value(0),
+    ));
+    setState(() => _expandedNotebooks.add(id)); // auto-expand new folder
   }
 }
 

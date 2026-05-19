@@ -48,12 +48,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('加载失败: $e')),
       ),
-      floatingActionButton: _selectedNotebookId == null
-          ? FloatingActionButton(
-              onPressed: () => _createQuickPage(),
-              child: const Icon(Icons.add, size: 28),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _selectedNotebookId != null
+            ? _createPageInNotebook()
+            : _createQuickPage(),
+        child: const Icon(Icons.add, size: 28),
+      ),
     );
   }
 
@@ -147,5 +147,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _createPageInNotebook() async {
+    if (_selectedNotebookId == null) return;
+    final db = await ref.read(databaseProvider.future);
+    final pageCount = (await db.notebookPages(_selectedNotebookId!)).length;
+    final pageId = FileStorage.generateId();
+    await db.createPage(PagesCompanion(
+      id: Value(pageId),
+      notebookId: Value(_selectedNotebookId!),
+      title: const Value(''),
+      paperType: const Value('blank'),
+      backgroundColor: const Value(0xFFFFFFFF),
+      createdAt: Value(DateTime.now()),
+      updatedAt: Value(DateTime.now()),
+      sortOrder: Value(pageCount),
+    ));
   }
 }

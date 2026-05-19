@@ -122,21 +122,42 @@ class _ToolButtonState extends State<_ToolButton>
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
             width: 44,
-            height: 44,
+            height: 52,
             decoration: BoxDecoration(
               color: widget.isActive
                   ? (widget.isDark
-                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.25)
-                      : Theme.of(context).colorScheme.primary.withValues(alpha: 0.12))
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                      : Theme.of(context).colorScheme.primary.withValues(alpha: 0.15))
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
+              border: widget.isActive
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                      width: 1.5,
+                    )
+                  : null,
             ),
-            child: Icon(
-              widget.plugin.icon,
-              size: 22,
-              color: widget.isActive
-                  ? Theme.of(context).colorScheme.primary
-                  : (widget.isDark ? Colors.grey.shade400 : const Color(0xFF5F6368)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  widget.plugin.icon,
+                  size: 22,
+                  color: widget.isActive
+                      ? Theme.of(context).colorScheme.primary
+                      : (widget.isDark ? Colors.grey.shade400 : const Color(0xFF5F6368)),
+                ),
+                if (widget.isActive) ...[
+                  const SizedBox(height: 2),
+                  Container(
+                    width: 16, height: 3,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ),

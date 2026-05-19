@@ -15,7 +15,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    beforeOpen: (details) async {},
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(notebooks, notebooks.parentId);
+      }
+    },
+  );
 
   static Future<AppDatabase> create() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -41,6 +51,30 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteNotebook(String id) =>
       (delete(notebooks)..where((t) => t.id.equals(id))).go();
+
+  Future<List<Notebook>> childNotebooks(String parentId) =>
+      (select(notebooks)
+        ..where((t) => t.parentId.equals(parentId))
+        ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .get();
+
+  Stream<List<Notebook>> watchChildNotebooks(String parentId) =>
+      (select(notebooks)
+        ..where((t) => t.parentId.equals(parentId))
+        ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .watch();
+
+  Future<List<Notebook>> rootNotebooks() =>
+      (select(notebooks)
+        ..where((t) => t.parentId.isNull())
+        ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .get();
+
+  Stream<List<Notebook>> watchRootNotebooks() =>
+      (select(notebooks)
+        ..where((t) => t.parentId.isNull())
+        ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .watch();
 
   // ── Pages ──
   Future<List<NotePage>> notebookPages(String notebookId) =>

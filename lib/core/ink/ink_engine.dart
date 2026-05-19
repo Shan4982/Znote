@@ -9,6 +9,7 @@ class InkEngine extends ChangeNotifier {
   final List<Stroke> _strokes = [];
   Stroke? _activeStroke;
   List<StrokePoint> _lastSamples = [];
+  int? _activePointer;
 
   Color color = Colors.black;
   double width = 2.0;
@@ -35,6 +36,8 @@ class InkEngine extends ChangeNotifier {
   }
 
   void onPointerDown(PointerDownEvent event) {
+    if (_activePointer != null) return; // Already tracking a pointer, ignore
+    _activePointer = event.pointer;
     _activeStroke = Stroke(
       id: _uuid.v4(),
       points: [StrokePoint(x: event.localPosition.dx, y: event.localPosition.dy)],
@@ -49,6 +52,7 @@ class InkEngine extends ChangeNotifier {
 
   void onPointerMove(PointerMoveEvent event) {
     if (_activeStroke == null) return;
+    if (event.pointer != _activePointer) return; // Only track the active pointer
     final newPoint = StrokePoint(
       x: event.localPosition.dx,
       y: event.localPosition.dy,
@@ -80,10 +84,12 @@ class InkEngine extends ChangeNotifier {
 
   void onPointerUp(PointerUpEvent event) {
     if (_activeStroke == null) return;
+    if (event.pointer != _activePointer) return; // Only respond to the tracked pointer
     final finalStroke = _activeStroke!.copyWith(points: _smoothPoints(_lastSamples));
     _strokes.add(finalStroke);
     _activeStroke = null;
     _lastSamples = [];
+    _activePointer = null;
     notifyListeners();
   }
 

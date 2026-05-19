@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' hide Column;
 import '../../../shared/providers.dart';
 import '../../../core/storage/database.dart';
-import '../../../core/storage/file_storage.dart';
 import '../../editor/editor_screen.dart';
 
 class PageGridPanel extends ConsumerStatefulWidget {
@@ -71,8 +69,7 @@ class _PageGridPanelState extends ConsumerState<PageGridPanel> {
           child: Row(
             children: [
               Container(
-                width: 4,
-                height: 20,
+                width: 4, height: 20,
                 decoration: BoxDecoration(
                   color: accentColor,
                   borderRadius: BorderRadius.circular(2),
@@ -82,17 +79,9 @@ class _PageGridPanelState extends ConsumerState<PageGridPanel> {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 20, fontWeight: FontWeight.w600,
                   color: isDark ? Colors.grey.shade100 : const Color(0xFF202124),
                 ),
-              ),
-              const Spacer(),
-              _GlassButton(
-                icon: Icons.add,
-                label: '新建页面',
-                isDark: isDark,
-                onTap: () => _createPage(db),
               ),
             ],
           ),
@@ -210,64 +199,6 @@ class _PageGridPanelState extends ConsumerState<PageGridPanel> {
     );
   }
 
-  Future<void> _createPage(AppDatabase db) async {
-    final pageCount = (await db.notebookPages(widget.notebookId)).length;
-    final id = FileStorage.generateId();
-    await db.createPage(PagesCompanion(
-      id: Value(id),
-      notebookId: Value(widget.notebookId),
-      title: const Value(''),
-      paperType: const Value('blank'),
-      backgroundColor: const Value(0xFFFFFFFF),
-      createdAt: Value(DateTime.now()),
-      updatedAt: Value(DateTime.now()),
-      sortOrder: Value(pageCount),
-    ));
-  }
-}
-
-class _GlassButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _GlassButton({
-    required this.icon,
-    required this.label,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _AnimatedPageCard extends StatefulWidget {
