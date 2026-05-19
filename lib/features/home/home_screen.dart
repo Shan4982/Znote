@@ -115,7 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await db.createNotebook(NotebooksCompanion(
         id: Value(notebookId),
         title: const Value('我的笔记本'),
-        coverColor: Value(Colors.primaries[0].value),
+        coverColor: Value(Colors.primaries[0].toARGB32()),
         createdAt: Value(DateTime.now()),
         updatedAt: Value(DateTime.now()),
         sortOrder: Value(0),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../plugin_interface.dart';
-import '../../ink/ink_engine.dart';
 import '../../ink/stroke_model.dart';
 
 class PenTool extends NotePlugin {

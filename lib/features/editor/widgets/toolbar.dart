@@ -111,7 +111,7 @@ class _ToolButtonState extends State<_ToolButton>
       },
       onTapCancel: () => _pressController.reverse(),
       child: AnimatedBuilder(
-        animation: _scaleAnim,
+        listenable: _scaleAnim,
         builder: (context, child) => Transform.scale(
           scale: _scaleAnim.value,
           child: child,

@@ -260,7 +260,7 @@ class _NotebookTreePanelState extends ConsumerState<NotebookTreePanel> {
     await db.createNotebook(NotebooksCompanion(
       id: Value(id),
       title: Value(title),
-      coverColor: Value(Colors.primaries[id.hashCode % Colors.primaries.length].value),
+      coverColor: Value(Colors.primaries[id.hashCode % Colors.primaries.length].toARGB32()),
       createdAt: Value(DateTime.now()),
       updatedAt: Value(DateTime.now()),
       sortOrder: Value(0),

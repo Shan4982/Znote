@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'stroke_model.dart';
 
@@ -35,7 +34,7 @@ class StrokePainter extends CustomPainter {
     }
 
     final paints = <double, Paint>{};
-    Paint _paintForWidth(double w) {
+    Paint paintForWidth(double w) {
       return paints.putIfAbsent(w, () => Paint()
         ..color = stroke.color
         ..strokeWidth = w
@@ -50,7 +49,7 @@ class StrokePainter extends CustomPainter {
       final p0 = stroke.points[i];
       final p1 = stroke.points[i + 1];
       final effectiveWidth = stroke.width * (0.3 + 0.7 * ((p0.pressure + p1.pressure) / 2));
-      canvas.drawLine(p0.offset, p1.offset, _paintForWidth(effectiveWidth));
+      canvas.drawLine(p0.offset, p1.offset, paintForWidth(effectiveWidth));
     }
   }
 
@@ -60,6 +59,4 @@ class StrokePainter extends CustomPainter {
         oldDelegate.strokes.length != strokes.length;
   }
 
-  @override
-  bool get isComplex => true;
 }
