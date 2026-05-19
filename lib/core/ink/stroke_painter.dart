@@ -22,9 +22,10 @@ class StrokePainter extends CustomPainter {
     if (stroke.points.isEmpty) return;
     if (stroke.points.length == 1) {
       final p = stroke.points.first;
+      final effectiveWidth = stroke.width * (0.3 + 0.7 * p.pressure);
       canvas.drawCircle(
         Offset(p.x, p.y),
-        stroke.width / 2,
+        effectiveWidth / 2,
         Paint()
           ..color = stroke.color
           ..blendMode = stroke.blend
@@ -33,44 +34,24 @@ class StrokePainter extends CustomPainter {
       return;
     }
 
-    final paint = Paint()
-      ..color = stroke.color
-      ..strokeWidth = stroke.width
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke
-      ..isAntiAlias = true
-      ..blendMode = stroke.blend;
-
-    final path = _buildPath(stroke.points);
-    canvas.drawPath(path, paint);
-  }
-
-  Path _buildPath(List<StrokePoint> points) {
-    final path = Path();
-    path.moveTo(points.first.x, points.first.y);
-
-    for (int i = 1; i < points.length - 1; i++) {
-      final p0 = points[i - 1];
-      final p1 = points[i];
-      final p2 = points[i + 1];
-      final mid1 = Offset(
-        (p0.x + p1.x) / 2,
-        (p0.y + p1.y) / 2,
-      );
-      final mid2 = Offset(
-        (p1.x + p2.x) / 2,
-        (p1.y + p2.y) / 2,
-      );
-      path.cubicTo(p1.x, p1.y, mid1.dx, mid1.dy, mid2.dx, mid2.dy);
+    final paints = <double, Paint>{};
+    Paint _paintForWidth(double w) {
+      return paints.putIfAbsent(w, () => Paint()
+        ..color = stroke.color
+        ..strokeWidth = w
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke
+        ..isAntiAlias = true
+        ..blendMode = stroke.blend);
     }
 
-    if (points.length >= 2) {
-      final last = points.last;
-      path.lineTo(last.x, last.y);
+    for (int i = 0; i < stroke.points.length - 1; i++) {
+      final p0 = stroke.points[i];
+      final p1 = stroke.points[i + 1];
+      final effectiveWidth = stroke.width * (0.3 + 0.7 * ((p0.pressure + p1.pressure) / 2));
+      canvas.drawLine(p0.offset, p1.offset, _paintForWidth(effectiveWidth));
     }
-
-    return path;
   }
 
   @override

@@ -1,29 +1,37 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import 'stroke_model.dart';
 
-class InkEngine {
+class InkEngine extends ChangeNotifier {
   static const _uuid = Uuid();
 
   final List<Stroke> _strokes = [];
   Stroke? _activeStroke;
+  List<StrokePoint> _lastSamples = [];
 
   Color color = Colors.black;
   double width = 2.0;
   PenType type = PenType.pen;
   BlendMode blend = BlendMode.srcOver;
-  List<StrokePoint> _lastSamples = []; // for smoother curves
 
   List<Stroke> get strokes => List.unmodifiable(_strokes);
   Stroke? get activeStroke => _activeStroke;
 
-  void setColor(Color c) => color = c;
-  void setWidth(double w) => width = w;
+  void setColor(Color c) {
+    color = c;
+    notifyListeners();
+  }
+
+  void setWidth(double w) {
+    width = w;
+    notifyListeners();
+  }
+
   void setType(PenType t) {
     type = t;
     blend = t == PenType.highlighter ? BlendMode.multiply : BlendMode.srcOver;
+    notifyListeners();
   }
 
   void onPointerDown(PointerDownEvent event) {
@@ -36,6 +44,7 @@ class InkEngine {
       blend: blend,
     );
     _lastSamples = [_activeStroke!.points.first];
+    notifyListeners();
   }
 
   void onPointerMove(PointerMoveEvent event) {
@@ -48,11 +57,11 @@ class InkEngine {
     );
     _lastSamples.add(newPoint);
     _activeStroke = _activeStroke!.copyWith(points: _smoothPoints(_lastSamples));
+    notifyListeners();
   }
 
   List<StrokePoint> _smoothPoints(List<StrokePoint> raw) {
     if (raw.length < 3) return raw;
-
     final smoothed = <StrokePoint>[raw.first];
     for (int i = 1; i < raw.length - 1; i++) {
       final a = raw[i - 1];
@@ -75,15 +84,16 @@ class InkEngine {
     _strokes.add(finalStroke);
     _activeStroke = null;
     _lastSamples = [];
+    notifyListeners();
   }
 
   void eraseAt(Offset position, double radius) {
     _strokes.removeWhere((stroke) {
       return stroke.points.any((p) => (p.offset - position).distance <= radius);
     });
+    notifyListeners();
   }
 
-  /// Select strokes intersecting with [rect], return their IDs.
   Set<String> selectInRect(ui.Rect rect) {
     final ids = <String>{};
     for (final stroke in _strokes) {
@@ -109,10 +119,18 @@ class InkEngine {
         );
       }
     }
+    notifyListeners();
   }
 
-  void clear() => _strokes.clear();
+  void clear() {
+    _strokes.clear();
+    notifyListeners();
+  }
+
   void undo() {
-    if (_strokes.isNotEmpty) _strokes.removeLast();
+    if (_strokes.isNotEmpty) {
+      _strokes.removeLast();
+      notifyListeners();
+    }
   }
 }
