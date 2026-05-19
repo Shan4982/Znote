@@ -27,8 +27,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   @override
   void initState() {
     super.initState();
+    final inkEngine = ref.read(inkEngineNotifierProvider);
     _pageContext = PageContext(
-      inkEngine: ref.read(inkEngineNotifierProvider),
+      inkEngine: inkEngine,
       notebookId: widget.notebookId,
       pageId: widget.pageId,
     );
@@ -48,10 +49,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
   Widget _buildEditor(InkEngine inkEngine, PluginManager pm) {
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('编辑'),
+      ),
       body: Column(
         children: [
-          // Toolbar at top for landscape, can move to side
-          Toolbar(pluginManager: pm, pageContext: _pageContext),
+          Toolbar(pluginManager: pm, pageContext: _pageContext, inkEngine: inkEngine),
           Expanded(
             child: Listener(
               onPointerDown: (event) {
@@ -72,9 +79,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   active.onPointerUp(_pageContext, event);
                 }
               },
-              child: PageCanvas(
-                strokes: inkEngine.strokes,
-                activeStroke: inkEngine.activeStroke,
+              child: ListenableBuilder(
+                listenable: inkEngine,
+                builder: (context, _) => PageCanvas(
+                  strokes: inkEngine.strokes,
+                  activeStroke: inkEngine.activeStroke,
+                ),
               ),
             ),
           ),
